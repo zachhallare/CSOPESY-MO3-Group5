@@ -1,0 +1,13 @@
+# Binaries
+*.exe
+*.o
+*.obj
+
+# Build directories
+build/
+bin/
+
+# IDE / Editor artifacts
+.vscode/
+.vs/
+.idea/
