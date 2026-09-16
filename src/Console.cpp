@@ -29,7 +29,7 @@ void Console::printHeader() const {
 
     std::cout << "Hello, Welcome to CSOPESY OS Emulator!\n\n"
                  "Group developer:\n"
-                 "    Hallare, Zach Benedict I.\nRamos, Margaret Patrice M.\nTan, Neil Justine J.\n\n"
+                 "    Hallare, Zach Benedict I.\n    Ramos, Margaret Patrice M.\n    Tan, Neil Justine J.\n\n"
                  "Version date: " __DATE__ "\n\n";
 }
 
