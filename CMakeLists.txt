@@ -8,6 +8,7 @@ add_executable(csopesy
     src/main.cpp
     src/Console.cpp
     src/Marquee.cpp
+    src/Screen.cpp
 )
 
 target_include_directories(csopesy PRIVATE include)
