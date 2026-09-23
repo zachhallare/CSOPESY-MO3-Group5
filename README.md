@@ -1,5 +1,10 @@
 # CSOPESY Emulator
 
+**Group 5:**
+* Hallare, Zach Benedict I.
+* Ramos, Margaret Patrice M.
+* Tan, Neil Justine J.
+
 This is a simple OS console emulator with a scrolling text banner.
 
 ## How to Build
