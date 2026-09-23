@@ -1,11 +1,9 @@
 // Screen.h
 // CSOPESY MO3 Group 5
 //
-// Shared terminal state. Two threads draw to this console: the main thread
-// (prompt, command output) and the marquee thread. Every write to std::cout
-// must be made while holding Screen::lock(), otherwise one thread cuts into
-// the middle of the other's escape sequence and the cursor is left parked
-// wherever that sequence happened to stop.
+// Keeps track of shared terminal state. Two threads draw to this console.
+// You need to hold the screen lock before writing to output.
+// This stops threads from interrupting each other and leaving the cursor in weird spots.
 
 #pragma once
 
@@ -13,28 +11,43 @@
 
 namespace Screen {
 
-// Rows 1..MARQUEE_ROWS are owned by the marquee.
+// The marquee owns these top rows.
 const int MARQUEE_ROWS = 5;
 
-// The command area starts below the marquee, with one blank row between.
+// The command area begins below the marquee.
 const int COMMAND_TOP = MARQUEE_ROWS + 2;
 
-// Guards all writes to std::cout.
+// Gets the lock for terminal output.
 std::mutex& lock();
 
-void init();      // enable ANSI + UTF-8, switch input to unbuffered/no-echo
-void shutdown();  // put the console mode back the way we found it
+// Sets up the terminal for our needs.
+void init();
 
-bool interactive();  // false when stdin is a pipe or file
+// Restores the original terminal settings.
+void shutdown();
+
+// Checks if a real user is typing.
+bool interactive();
+
+// Gets the terminal width.
 int  width();
+
+// Gets the terminal height.
 int  height();
 
+// Moves the cursor to a specific row and column.
 void moveTo(int row, int col);
+
+// Clears the current line.
 void eraseLine();
+
+// Restricts scrolling to a specific area.
 void setScrollRegion(int top, int bottom);
+
+// Lets the whole screen scroll normally again.
 void resetScrollRegion();
 
-// Non-blocking key read. Returns 0 when nothing is waiting.
+// Reads a key press right away and returns 0 if nothing is pressed.
 int readKey();
 
 } // namespace Screen

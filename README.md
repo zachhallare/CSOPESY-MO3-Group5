@@ -86,12 +86,3 @@ Here is what each file does:
 | `CMakeLists.txt` | Build setup for CMake |
 | `.gitignore` | Tells git which build files to ignore |
 | `README.md` | Explains how to build, run, and use the project |
-
-## What Still Needs to Be Implemented
-
-Based on the project specs, here is what is left to finish:
-
-| Item | What to do |
-| --- | --- |
-| PowerPoint presentation | Prepare the technical report on refresh rate and hardware limits |
-| Demo video | Record a seamless uncut video running the test cases |

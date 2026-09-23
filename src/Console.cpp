@@ -11,21 +11,17 @@
 #include <thread>
 #include <chrono>
 
-// How often the input loop checks the keyboard. Low enough that typing feels
-// immediate, high enough that the loop is not a busy-wait competing with the
-// marquee thread for the output lock.
+// How often the input loop checks the keyboard.
 static const int POLL_MS = 10;
 
-// Every write to std::cout goes through here. Holding Screen::lock() keeps
-// this output from landing in the middle of a marquee frame.
+// Prints text safely by holding the output lock.
 static void say(const std::string& text) {
     std::lock_guard<std::mutex> guard(Screen::lock());
     std::cout << text;
     std::cout.flush();
 }
 
-// Remove one matching pair of surrounding quotes, so both
-// set_text hello world  and  set_text "hello world"  give the same result.
+// Removes one matching pair of surrounding quotes.
 static std::string stripQuotes(const std::string& s) {
     if (s.size() >= 2) {
         const char f = s.front();
@@ -37,11 +33,12 @@ static std::string stripQuotes(const std::string& s) {
     return s;
 }
 
+// Sets up the console.
 Console::Console() {}
 
+// Prints the header text.
 void Console::printHeader() const {
-    // Rows 1..MARQUEE_ROWS are the marquee's; it paints the CSOPESY banner
-    // there itself, so the header only prints the text below that band.
+    // Only print text below the marquee banner.
     m_marquee.drawHome();
 
     std::ostringstream out;
@@ -58,6 +55,7 @@ void Console::printHeader() const {
     std::cout.flush();
 }
 
+// Prints the help menu.
 void Console::printHelp() const {
     say("\nAvailable commands:\n"
         "  start_marquee     - Start the scrolling marquee animation\n"
@@ -68,6 +66,7 @@ void Console::printHelp() const {
         "  exit              - Exit the emulator\n\n");
 }
 
+// Starts the marquee animation.
 void Console::handleStartMarquee() {
     if (m_marquee.start()) {
         say("Marquee started.\n");
@@ -76,6 +75,7 @@ void Console::handleStartMarquee() {
     }
 }
 
+// Stops the marquee animation.
 void Console::handleStopMarquee() {
     if (m_marquee.stop()) {
         say("Marquee stopped.\n");
@@ -84,6 +84,7 @@ void Console::handleStopMarquee() {
     }
 }
 
+// Sets the marquee text.
 void Console::handleSetText(const std::string& arg) {
     const std::string text = stripQuotes(arg);
 
@@ -96,6 +97,7 @@ void Console::handleSetText(const std::string& arg) {
     say("Marquee text set to: " + text + "\n");
 }
 
+// Sets the marquee speed.
 void Console::handleSetSpeed(const std::string& arg) {
     const std::string value = stripQuotes(arg);
 
@@ -104,8 +106,7 @@ void Console::handleSetSpeed(const std::string& arg) {
         return;
     }
 
-    // The whole argument must be digits. std::stoi alone would silently
-    // accept "100abc" as 100.
+    // Make sure the value only contains numbers.
     if (value.find_first_not_of("0123456789") != std::string::npos) {
         say("Invalid speed: \"" + value + "\" is not a positive whole number.\n");
         return;
@@ -133,12 +134,14 @@ void Console::handleSetSpeed(const std::string& arg) {
     say(msg.str());
 }
 
+// Prints the command prompt.
 void Console::printPrompt() const {
     say("Command> ");
 }
 
+// Runs a single command.
 bool Console::executeCommand(const std::string& raw) {
-    // Trim whitespace from both ends.
+    // Trim whitespace.
     auto start = raw.find_first_not_of(" \t\r\n");
     if (start == std::string::npos) {
         return true;
@@ -146,7 +149,7 @@ bool Console::executeCommand(const std::string& raw) {
     auto end = raw.find_last_not_of(" \t\r\n");
     const std::string input = raw.substr(start, end - start + 1);
 
-    // Split command and argument.
+    // Split the command and argument.
     std::string cmd = input;
     std::string arg;
     auto spacePos = input.find_first_of(" \t");
@@ -182,6 +185,7 @@ bool Console::executeCommand(const std::string& raw) {
     return true;
 }
 
+// Runs the main command loop.
 void Console::run() {
     Screen::init();
 
@@ -189,10 +193,7 @@ void Console::run() {
         std::lock_guard<std::mutex> guard(Screen::lock());
         std::cout << "\033[2J\033[H";
 
-        // Confine scrolling to the rows below the marquee. Without this the
-        // console scrolls the whole window once output fills it, dragging the
-        // prompt up into the rows the marquee repaints every frame -- which is
-        // what makes "Command>" disappear.
+        // Keep scrolling within the command area only.
         Screen::setScrollRegion(Screen::COMMAND_TOP, Screen::height());
         std::cout.flush();
     }
@@ -204,9 +205,7 @@ void Console::run() {
     bool running = true;
 
     if (!Screen::interactive()) {
-        // stdin is a pipe or a file. Keyboard polling only works on a real
-        // console, so fall back to blocking line reads and echo the line
-        // ourselves, since nothing else will.
+        // Read lines directly when not interactive.
         std::string line;
         while (running && std::getline(std::cin, line)) {
             say(line + "\n");
@@ -240,12 +239,11 @@ void Console::run() {
                 buffer.push_back(static_cast<char>(key));
                 say(std::string(1, static_cast<char>(key)));
             }
-            // Anything else (control keys, escapes) is ignored.
+            // Ignore other control keys.
         }
     }
 
-    // Hand the terminal back the way we borrowed it. Leaving the scroll
-    // region set would break the user's shell after we exit.
+    // Reset the terminal scroll region before exiting.
     {
         std::lock_guard<std::mutex> guard(Screen::lock());
         Screen::resetScrollRegion();

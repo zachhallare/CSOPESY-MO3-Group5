@@ -1,8 +1,8 @@
 // Marquee.cpp
 // CSOPESY MO3 Group 5
 //
-// The animation runs on a background thread.
-// It draws the ASCII banner across rows 1 to 5 without disturbing user input.
+// Runs the animation on a background thread.
+// It draws the banner across the top rows.
 
 #include "Marquee.h"
 #include "Screen.h"
@@ -18,14 +18,17 @@ static const std::vector<std::string> DEFAULT_BANNER = {
     R"( \____|____/ \___/|_|   |_____|____/   |_|  )"
 };
 
+// Moves the cursor to a specific spot.
 static void moveTo(int row, int col) {
     std::cout << "\033[" << row << ";" << col << "H";
 }
 
+// Clears the current line.
 static void eraseLine() {
     std::cout << "\033[2K";
 }
 
+// Initializes the marquee with default settings.
 Marquee::Marquee()
     : m_lines(DEFAULT_BANNER),
       m_speedMs(100),
@@ -33,6 +36,7 @@ Marquee::Marquee()
       m_running(false)
 {}
 
+// Cleans up the thread if it is still running.
 Marquee::~Marquee() {
     // Stop thread if still running when deleted.
     if (m_running.load()) {
@@ -42,6 +46,7 @@ Marquee::~Marquee() {
     }
 }
 
+// Starts the background thread.
 bool Marquee::start() {
     if (m_running.load())
         return false;
@@ -56,6 +61,7 @@ bool Marquee::start() {
     return true;
 }
 
+// Stops the background thread.
 bool Marquee::stop() {
     if (!m_running.load())
         return false;
@@ -68,23 +74,22 @@ bool Marquee::stop() {
     return true;
 }
 
+// Checks if the animation is running.
 bool Marquee::isRunning() const {
     return m_running.load();
 }
 
+// Replaces the marquee text.
 void Marquee::setText(const std::string& text) {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (text.empty()) {
-            // Only a blank input falls back to the banner. Any other input is
-            // shown literally, so "set_text default" really does print
-            // "default".
+            // Restore the default banner.
             m_lines = DEFAULT_BANNER;
         } else {
             m_lines = { text };
         }
-        // Restart the scroll so the new text enters from the right edge
-        // instead of appearing mid-slide at the old offset.
+        // Restart the scroll to enter from the right edge.
         m_offset = 0;
     }
     if (!m_running.load()) {
@@ -92,6 +97,7 @@ void Marquee::setText(const std::string& text) {
     }
 }
 
+// Sets the animation speed in milliseconds.
 void Marquee::setSpeedMs(int ms) {
     if (ms < MIN_SPEED_MS) ms = MIN_SPEED_MS;
     if (ms > MAX_SPEED_MS) ms = MAX_SPEED_MS;
@@ -100,6 +106,7 @@ void Marquee::setSpeedMs(int ms) {
     m_speedMs = ms;
 }
 
+// Draws the text at the home position.
 void Marquee::drawHome() const {
     std::vector<std::string> lines;
     {
@@ -120,6 +127,7 @@ void Marquee::drawHome() const {
     std::cout.flush();
 }
 
+// Runs the animation loop.
 void Marquee::animationLoop() {
     while (m_running.load()) {
         std::vector<std::string> lines;
@@ -132,9 +140,7 @@ void Marquee::animationLoop() {
             offset  = m_offset;
         }
 
-        // Follow the real window size. At a hardcoded 80 a narrower console
-        // wraps every banner row onto the line below it, which walks the
-        // marquee down into the command area.
+        // Follow the real window size.
         const int WINDOW_WIDTH = Screen::width();
 
         int maxLen = 0;
@@ -147,9 +153,7 @@ void Marquee::animationLoop() {
         const int totalRange = WINDOW_WIDTH + maxLen;
         const int textStart = WINDOW_WIDTH - offset;
 
-        // Save cursor, draw all banner rows, then restore cursor. The whole
-        // frame is one critical section so the main thread cannot print
-        // between the save and the restore.
+        // Draw the frame while holding the lock.
         {
             std::lock_guard<std::mutex> guard(Screen::lock());
             std::cout << "\033[s";
@@ -169,9 +173,7 @@ void Marquee::animationLoop() {
                         }
                     }
 
-                    // Trim the trailing blanks. eraseLine already cleared the
-                    // row, and writing the final column would wrap the cursor
-                    // onto the next line.
+                    // Trim trailing blanks to prevent wrapping.
                     const std::size_t lastCh = line.find_last_not_of(' ');
                     if (lastCh != std::string::npos) {
                         std::cout << line.substr(0, lastCh + 1);
@@ -182,9 +184,7 @@ void Marquee::animationLoop() {
             std::cout.flush();
         }
 
-        // Move banner one step left and wrap around at the end. If set_text
-        // reset the offset while this frame was drawing, leave it at 0 so the
-        // new text still starts from the right edge.
+        // Move the banner left and wrap around.
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             if (m_offset == offset) {

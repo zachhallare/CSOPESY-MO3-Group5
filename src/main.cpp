@@ -3,6 +3,7 @@
 
 #include "Console.h"
 
+// Starts the application.
 int main() {
     Console console;
     console.run();

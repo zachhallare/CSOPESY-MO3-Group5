@@ -11,40 +11,43 @@
 
 class Marquee {
 public:
-    // Accepted range for set_speed, in milliseconds.
+    // Allowed speed limits in milliseconds.
     static const int MIN_SPEED_MS = 1;
     static const int MAX_SPEED_MS = 60000;
 
+    // Sets up the marquee.
     Marquee();
+
+    // Cleans up the background thread.
     ~Marquee();
 
-    // Start the marquee on a background thread.
-    // Return false if it is already running.
+    // Starts the animation in the background and returns false if it is already going.
     bool start();
 
-    // Stop the background thread and wait for it to finish.
-    // Return false if it is not running.
+    // Stops the animation and waits for it to finish. Returns false if it was not running.
     bool stop();
 
+    // Checks if the animation is currently active.
     bool isRunning() const;
 
-    // Replace the marquee text. An empty string restores the CSOPESY banner.
+    // Updates the text. An empty string brings back the default banner.
     void setText(const std::string& text);
 
-    // Set the animation refresh rate. The value is clamped to
-    // [MIN_SPEED_MS, MAX_SPEED_MS].
+    // Changes the animation speed and keeps it within the allowed limits.
     void setSpeedMs(int ms);
 
+    // Draws the text at the starting position.
     void drawHome() const;
 
 private:
+    // Runs the animation loop in the background.
     void animationLoop();
 
     std::vector<std::string> m_lines;
     int                      m_speedMs;
-    int                      m_offset;  // current scroll position
+    int                      m_offset;  // Tracks the scroll position.
     std::atomic<bool>        m_running;
     std::thread              m_thread;
-    mutable std::mutex       m_mutex; // lock for m_lines, m_speedMs and m_offset
+    mutable std::mutex       m_mutex; // Keeps our shared data safe from other threads.
 };
 
