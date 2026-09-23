@@ -9,8 +9,11 @@ Open your terminal. Make sure you are in the project root folder (`CSOPESY-MO3-G
 Run this command:
 
 ```
-g++ -std=c++17 -Iinclude src/main.cpp src/Console.cpp src/Marquee.cpp -o csopesy.exe
+g++ -std=c++14 -Iinclude src/main.cpp src/Console.cpp src/Marquee.cpp src/Screen.cpp -o csopesy.exe -pthread
 ```
+
+Use `-std=c++17` instead if your compiler supports it; the code builds under
+either. The g++ bundled with Dev-Cpp (4.9.2) only understands `c++14`.
 
 If you use CMake, run these commands from the root folder:
 
@@ -43,7 +46,7 @@ Once the program opens, you will see a `Command>` prompt. Type any of these comm
 | --- | --- |
 | `start_marquee` | Starts the scrolling ASCII banner animation |
 | `stop_marquee` | Stops the scrolling animation and restores the banner |
-| `set_text <text>` | Sets custom marquee text (use `default` for the ASCII banner) |
+| `set_text <text>` | Sets custom marquee text, shown exactly as typed |
 | `set_speed <ms>` | Sets animation refresh rate in milliseconds |
 | `help` | Shows the list of commands |
 | `exit` | Closes the emulator |
@@ -56,10 +59,12 @@ CSOPESY-MO3-Group5/
 │   └── specs.md
 ├── include/
 │   ├── Console.h
-│   └── Marquee.h
+│   ├── Marquee.h
+│   └── Screen.h
 ├── src/
 │   ├── Console.cpp
 │   ├── Marquee.cpp
+│   ├── Screen.cpp
 │   └── main.cpp
 ├── .gitignore
 ├── CMakeLists.txt
@@ -76,6 +81,8 @@ Here is what each file does:
 | `src/main.cpp` | Entry point that launches the console |
 | `src/Console.cpp` | Renders the banner, reads user input, and handles commands |
 | `src/Marquee.cpp` | Handles the background thread and scrolling text animation |
+| `include/Screen.h` | Declares the shared console lock, layout rows, and key input |
+| `src/Screen.cpp` | Owns terminal setup, window size, scroll region, and key polling |
 | `CMakeLists.txt` | Build setup for CMake |
 | `.gitignore` | Tells git which build files to ignore |
 | `README.md` | Explains how to build, run, and use the project |
@@ -86,8 +93,5 @@ Based on the project specs, here is what is left to finish:
 
 | Item | What to do |
 | --- | --- |
-| `set_text` command | Hook up the command to let the user change the marquee text |
-| `set_speed` command | Hook up the command to let the user change the refresh rate |
-| Group developer names | Replace the placeholder in the welcome banner with your actual names |
 | PowerPoint presentation | Prepare the technical report on refresh rate and hardware limits |
 | Demo video | Record a seamless uncut video running the test cases |
