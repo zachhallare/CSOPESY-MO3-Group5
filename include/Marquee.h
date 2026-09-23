@@ -11,6 +11,10 @@
 
 class Marquee {
 public:
+    // Accepted range for set_speed, in milliseconds.
+    static const int MIN_SPEED_MS = 1;
+    static const int MAX_SPEED_MS = 60000;
+
     Marquee();
     ~Marquee();
 
@@ -24,8 +28,13 @@ public:
 
     bool isRunning() const;
 
+    // Replace the marquee text. An empty string restores the CSOPESY banner.
     void setText(const std::string& text);
+
+    // Set the animation refresh rate. The value is clamped to
+    // [MIN_SPEED_MS, MAX_SPEED_MS].
     void setSpeedMs(int ms);
+
     void drawHome() const;
 
 private:
@@ -33,8 +42,9 @@ private:
 
     std::vector<std::string> m_lines;
     int                      m_speedMs;
+    int                      m_offset;  // current scroll position
     std::atomic<bool>        m_running;
     std::thread              m_thread;
-    mutable std::mutex       m_mutex; // lock for m_lines and m_speedMs
+    mutable std::mutex       m_mutex; // lock for m_lines, m_speedMs and m_offset
 };
 

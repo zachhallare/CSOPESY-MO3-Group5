@@ -21,6 +21,13 @@ private:
     // Command handlers
     void handleStartMarquee();
     void handleStopMarquee();
+    void handleSetText(const std::string& arg);
+    void handleSetSpeed(const std::string& arg);
+
+    void printPrompt() const;
+
+    // Runs one line of input. Returns false when the user asked to exit.
+    bool executeCommand(const std::string& raw);
 
     Marquee m_marquee;
 };
